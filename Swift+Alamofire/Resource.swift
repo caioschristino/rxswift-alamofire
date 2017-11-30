@@ -7,3 +7,44 @@
 //
 
 import Foundation
+
+enum Method: String {
+    case GET = "GET"
+}
+
+protocol Resource {
+    var method: Method { get }
+    var path: String { get }
+    var parameters: [String: String] { get }
+}
+
+extension Resource {
+    
+    var method: Method {
+        return .GET
+    }
+    
+    func requestWithBaseURL(baseURL: NSURL) -> NSURLRequest {
+        let URL = baseURL.appendingPathComponent(path)
+        
+        // NSURLComponents can fail due to programming errors, so
+        // prefer crashing than returning an optional
+        guard var components = URLComponents(url: URL!, resolvingAgainstBaseURL: false) else {
+            fatalError("Unable to create URL components from \(String(describing: URL))")
+        }
+        
+        components.queryItems = parameters.map {
+            URLQueryItem(name: String($0), value: String($1))
+        }
+        
+        guard let finalURL = components.url else {
+            fatalError("Unable to retrieve final URL")
+        }
+        
+        let request = NSMutableURLRequest(url: finalURL)
+        request.httpMethod = method.rawValue
+        
+        return request
+    }
+}
+
